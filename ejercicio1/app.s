@@ -18,35 +18,105 @@ main:
 	movk x10, 0x2121, lsl 00 	// color de fondo
 
 	// mastil
-	movz x11, 0x7D, lsl 16 		//7D4016
+	movz x11, 0x7D, lsl 16 		// #7D4016
 	movk x11, 0x4016, lsl 00
 
 	// bandera y algunas estrellas
 	movz x12, 0xFF, lsl 16 		// #FFFFF 
-	movk x12, 0xFFF, lsl 00
+	movk x12, 0xFFFF, lsl 00
 
 	// azul bandera 
 	movz x13, 0x6C, lsl 16 	// #6CACE4
 	movk x13, 0xACE4, lsl 00 
 
 	// estrellas lilas
-	movz x14, 0xD8, lsl 16 //#D8C9F4
+	movz x14, 0xD8, lsl 16 // #D8C9F4
 	movk x14, 0xC9F4, lsl 00 
 
 	// pasto(?) 
-	movz x15, 0x2B, lsl 16 //#2B5B44
+	movz x15, 0x2B, lsl 16 // #2B5B44
 	movk x15, 0x5B44, lsl 00
 	
-	mov x2, SCREEN_HEIGHT         // Y Size
+	mov x0, x20                 // Recuperar dirección base
+    mov x2, SCREEN_HEIGHT       // Y Size
+    
 loop1:
 	mov x1, SCREEN_WIDTH         // X Size
 loop0:
+	// pintado de fondo
 	stur w10,[x0]  // Colorear el pixel N
 	add x0,x0,4	   // Siguiente pixel
 	sub x1,x1,1	   // Decrementar contador X
 	cbnz x1,loop0  // Si no terminó la fila, salto
 	sub x2,x2,1	   // Decrementar contador Y
 	cbnz x2,loop1  // Si no es la última fila, salto
+	
+	//-------------- Llamados de dibujos ---------------//
+
+	// x0 direccion de framebuffer
+	// x1 x_inicio 
+	// x2 y_inicio 
+	// x3 largo/longitud
+	// x4 ángulo de direccion
+		// Ángulo 0 = horizontal
+		// Ángulo 2 = diagonal positiva (45°)
+		// Ángulo 4 = vertical
+		// Ángulo 6 = diagonal negativa (135°)
+	// llamado
+	// comentado, usar para hacer pasto cruzado despues pasando el color  x15 (w15)
+	// horizontal (ángulo 0)
+	// mov x0, x20              
+	// mov x1, #200             
+	// mov x2, #100             
+	// mov x3, #50             
+	// mov x4, #0               
+	// bl linea                 
+// 
+	// // diagonal 45° (ángulo 2)
+	// mov x0, x20              
+	// mov x1, #250              
+	// mov x2, #150             
+	// mov x3, #40              
+	// mov x4, #2               
+	// bl linea                 
+// 
+	// // vertical (ángulo 4)
+	// mov x0, x20              
+	// mov x1, #300             
+	// mov x2, #200             
+	// mov x3, #60              
+	// mov x4, #4               
+	// bl linea                
+// 
+	// // diagonal 135° (ángulo 6)
+	// mov x0, x20              
+	// mov x1, #350             
+	// mov x2, #250             
+	// mov x3, #30              
+	// mov x4, #6               
+	bl linea                
+
+	// estrella 
+	// x_centro 
+	// y_centro 
+	// tamaño
+	// Color
+	// llamado
+	
+	mov x0, x20              
+	mov x1, #320             
+	mov x2, #240             
+	mov x3, #8              
+	mov x4, x14              
+	bl estrella              
+
+	mov x0, x20             
+	mov x1, #400             
+	mov x2, #150             
+	mov x3, #5              
+	mov x4, x12              
+	bl estrella
+
 
 	// Ejemplo de uso de gpios
 	mov x9, GPIO_BASE
@@ -67,8 +137,192 @@ loop0:
 	// efectivamente, su valor representará si GPIO 2 está activo
 	lsr w11, w11, 1
 
-	//---------------------------------------------------------------
-	// Infinite Loop
+	
+//-------------- Funciones ---------------------//
 
+
+//------Lineas
+
+linea:
+    stp x29, x30, [sp, #-16]!
+    stp x19, x20, [sp, #-16]!
+    stp x21, x22, [sp, #-16]!
+    
+    mov x19, x0        // direccion  
+    mov x20, x1        // x_inicio
+    mov x21, x2        // y_inicio
+    mov x22, x3        // longitud
+    
+    cmp x4, #0
+    b.eq linea_horizontal   
+    cmp x4, #4
+    b.eq linea_vertical    
+    cmp x4, #2
+    b.eq linea_diagonal_pos 
+    cmp x4, #6
+    b.eq linea_diagonal_neg
+    b linea_fin         // si no hay angulo valido, termina
+
+// @params
+// x9 = ancho * y_inicio
+// x9 = (ancho * y_inicio) + x_inicio
+// x9 *= 4 (bytes por píxel)
+// x9 = dirección base + offset
+
+linea_horizontal:
+    mov x9, SCREEN_WIDTH
+    mul x9, x9, x21     
+    add x9, x9, x20     
+    lsl x9, x9, 2       
+    add x9, x19, x9     
+    
+    mov x10, #0         
+    
+linea_h_loop:
+    stur w12, [x9]     
+    add x9, x9, #4      
+    add x10, x10, #1    
+    cmp x10, x22        
+    b.lt linea_h_loop   
+    b linea_fin
+
+linea_vertical:
+    mov x9, SCREEN_WIDTH
+    mul x9, x9, x21     
+    add x9, x9, x20     
+    lsl x9, x9, 2       
+    add x9, x19, x9     
+    
+    mov x10, #0         
+    mov x11, SCREEN_WIDTH       
+    lsl x11, x11, #2
+    b linea_v_loop      
+
+linea_diagonal_pos:
+    mov x9, SCREEN_WIDTH
+    mul x9, x9, x21     
+    add x9, x9, x20     
+    lsl x9, x9, 2       
+    add x9, x19, x9     
+    
+    mov x10, #0         
+    mov x11, SCREEN_WIDTH       
+    lsl x11, x11, #2            
+    add x11, x11, #4
+    b linea_d_pos_loop  
+
+linea_diagonal_neg:
+    mov x9, SCREEN_WIDTH
+    mul x9, x9, x21     
+    add x9, x9, x20     
+    lsl x9, x9, 2       
+    add x9, x19, x9     
+    
+    mov x10, #0         
+    mov x11, SCREEN_WIDTH       
+    lsl x11, x11, #2            
+    sub x11, x11, #4
+    b linea_d_neg_loop  
+
+linea_v_loop:
+    stur w12, [x9]     
+    add x9, x9, x11     
+    add x10, x10, #1    
+    cmp x10, x22        
+    b.lt linea_v_loop   
+    b linea_fin
+
+linea_d_pos_loop:
+    stur w12, [x9]     
+    add x9, x9, x11     
+    add x10, x10, #1    
+    cmp x10, x22        
+    b.lt linea_d_pos_loop 
+    b linea_fin
+
+linea_d_neg_loop:
+    stur w12, [x9]     
+    add x9, x9, x11     
+    add x10, x10, #1    
+    cmp x10, x22        
+    b.lt linea_d_neg_loop 
+    b linea_fin         
+
+linea_fin:
+    ldp x21, x22, [sp], #16
+    ldp x19, x20, [sp], #16
+    ldp x29, x30, [sp], #16
+    ret
+
+estrella:
+    stp x29, x30, [sp, #-16]!
+    stp x19, x20, [sp, #-16]!
+    stp x21, x22, [sp, #-16]!
+    stp x23, x24, [sp, #-16]!
+    
+    // párametros guardados a pasar
+    mov x19, x0         
+    mov x20, x1        
+    mov x21, x2        
+    mov x22, x3       
+    mov x23, x4        
+    
+    // colores
+    mov x24, x12       
+    mov x12, x23       
+    
+	// @params
+	// dirección
+	// y_incio 
+	// x_inicio
+	// longitud 
+	// angulo (vertial, horizontal, 45 o 135 grados)
+    // Línea vertical (punta hacia arriba y abajo)
+
+    mov x0, x19        
+    sub x2, x21, x22   
+    mov x1, x20        
+    mov x3, x22, lsl #1
+    mov x4, #4         
+    bl linea           
+    
+    // horizontal
+    mov x0, x19        
+    sub x1, x20, x22   
+    mov x2, x21        
+    mov x3, x22, lsl #1 
+    mov x4, #0        
+    bl linea           
+    
+    //45° 
+    mov x0, x19        
+    sub x1, x20, x22   
+    sub x2, x21, x22   
+    mov x3, x22, lsl #1
+    mov x4, #2         
+    bl linea           
+    
+    // 135° 
+    mov x0, x19        
+    add x1, x20, x22   
+    sub x2, x21, x22   
+    mov x3, x22, lsl #1 
+    mov x4, #6         
+    bl linea           
+    
+    mov x12, x24
+    
+    // restaura registros
+    ldp x23, x24, [sp], #16
+    ldp x21, x22, [sp], #16
+    ldp x19, x20, [sp], #16
+    ldp x29, x30, [sp], #16
+    ret
+
+circulo:
+
+
+//---------------------------------------------------------------
+	// Infinite Loop
 InfLoop:
 	b InfLoop
