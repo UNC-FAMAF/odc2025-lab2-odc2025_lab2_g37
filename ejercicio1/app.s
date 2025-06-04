@@ -1,5 +1,5 @@
 	.equ SCREEN_WIDTH, 		640
-	.equ SCREEN_HEIGH, 		480
+	.equ SCREEN_HEIGHT, 		480
 	.equ BITS_PER_PIXEL,  	32
 
 	.equ GPIO_BASE,      0x3f200000
@@ -13,10 +13,31 @@ main:
  	mov x20, x0	// Guarda la dirección base del framebuffer en x20
 	//---------------- CODE HERE ------------------------------------
 
-	movz x10, 0xC7, lsl 16
-	movk x10, 0x1585, lsl 00
+	// fondo
+	movz x10, 0x21, lsl 16 		// color de fondo #212121
+	movk x10, 0x2121, lsl 00 	// color de fondo
 
-	mov x2, SCREEN_HEIGH         // Y Size
+	// mastil
+	movz x11, 0x7D, lsl 16 		//7D4016
+	movk x11, 0x4016, lsl 00
+
+	// bandera y algunas estrellas
+	movz x12, 0xFF, lsl 16 		// #FFFFF 
+	movk x12, 0xFFF, lsl 00
+
+	// azul bandera 
+	movz x13, 0x6C, lsl 16 	// #6CACE4
+	movk x13, 0xACE4, lsl 00 
+
+	// estrellas lilas
+	movz x14, 0xD8, lsl 16 //#D8C9F4
+	movk x14, 0xC9F4, lsl 00 
+
+	// pasto(?) 
+	movz x15, 0x2B, lsl 16 //#2B5B44
+	movk x15, 0x5B44, lsl 00
+	
+	mov x2, SCREEN_HEIGHT         // Y Size
 loop1:
 	mov x1, SCREEN_WIDTH         // X Size
 loop0:
