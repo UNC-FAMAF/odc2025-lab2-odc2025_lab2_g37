@@ -25,6 +25,9 @@ main:
 
     bl bandera
 
+	bl estrellas
+	
+
 InfLoop:
 	b InfLoop
 

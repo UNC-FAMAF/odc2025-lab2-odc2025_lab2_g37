@@ -306,8 +306,8 @@ background:
     SUB SP, SP, 8 						
 	STUR X30, [SP, 0]
     
-    movz w10, 0x21, lsl 16
-    movk w10, 0x2121, lsl 0
+    movz w10, 0x14, lsl 16
+    movk w10, 0x1414, lsl 0
     mov x1, SCREEN_WIDTH    // Ancho total de la pantalla
     mov x2, SCREEN_HEIGHT   // Alto total de la pantalla
     mov x3, 0               // Posición X inicial (0)
@@ -406,8 +406,8 @@ texto:
     mov x4, 40              // Posición Y
     bl draw_rectangle
     // Interior
-    movz w10, 0x21, lsl 16
-    movk w10, 0x2121, lsl 0
+    movz w10, 0x14, lsl 16
+    movk w10, 0x1414, lsl 0
     mov x1, 10              // Ancho del segmento
     mov x2, 10              // Alto del segmento
     mov x3, 30              // Posición X
@@ -450,8 +450,8 @@ texto:
     bl draw_rectangle
     mov x1, 20              // Ancho del segmento
     mov x2, 20              // Alto del segmento
-    movz w10, 0x21, lsl 16
-    movk w10, 0x2121, lsl 0
+    movz w10, 0x14, lsl 16
+    movk w10, 0x1414, lsl 0
     bl draw_rectangle
     mov x1, 10              // Ancho del segmento
     mov x2, 10              // Alto del segmento
@@ -469,8 +469,8 @@ texto:
     mov x4, 40              // Posición Y
     bl draw_rectangle
     // Interior
-    movz w10, 0x21, lsl 16
-    movk w10, 0x2121, lsl 0
+    movz w10, 0x14, lsl 16
+    movk w10, 0x1414, lsl 0
     mov x1, 20              // Ancho del segmento
     mov x2, 10              // Alto del segmento
     mov x3, 110             // Posición X
@@ -487,8 +487,8 @@ texto:
     mov x3, 140
     mov x4, 20
     bl draw_rectangle
-    movz w10, 0x21, lsl 16
-    movk w10, 0x2121, lsl 0
+    movz w10, 0x14, lsl 16
+    movk w10, 0x1414, lsl 0
     mov x1, 20              // Ancho del segmento
     mov x2, 10              // Alto del segmento
     mov x4, 30              // Posición Y
@@ -507,8 +507,8 @@ texto:
     mov x4, 20              // Posición Y
     bl draw_rectangle
     // Interior
-    movz w10, 0x21, lsl 16
-    movk w10, 0x2121, lsl 0
+    movz w10, 0x14, lsl 16
+    movk w10, 0x1414, lsl 0
     mov x1, 10              // Ancho del segmento
     mov x2, 30              // Alto del segmento
     mov x3, 190              // Posición X
@@ -524,8 +524,8 @@ texto:
     mov x3, 220
     mov x4, 20
     bl draw_rectangle
-    movz w10, 0x21, lsl 16
-    movk w10, 0x2121, lsl 0
+    movz w10, 0x14, lsl 16
+    movk w10, 0x1414, lsl 0
     mov x1, 20              // Ancho del segmento
     mov x2, 10              // Alto del segmento
     mov x4, 30              // Posición Y
@@ -543,8 +543,8 @@ texto:
     mov x4, 20          // Posición Y
     bl draw_rectangle
 
-    movz w10, 0x21, lsl 16
-    movk w10, 0x2121, lsl 0
+    movz w10, 0x14, lsl 16
+    movk w10, 0x1414, lsl 0
     mov x1, 20
     mov x2, 10  
     mov x3, 270         // Posición X
@@ -562,8 +562,7 @@ bandera:
     SUB SP, SP, 8 						
 	STUR X30, [SP, 0]
 
-    // d) Dibujar bandera Argentina en un mástil (más alta)
-	// Color del mástil (gris: ARGB=FFAAAAAA -> 0xFFAAAAAA)
+	// Mástil (gris: ARGB=FFAAAAAA -> 0xFFAAAAAA)
 	movz w10, 0xAA, lsl 16
 	movk w10, 0xAAAA, lsl 0
 	mov x1, 12              // Ancho del mástil
@@ -655,143 +654,231 @@ bandera:
 	ADD SP, SP, 8	
 ret
 
-estrellas:
+estrellas1:
     SUB SP, SP, 8 						
-	STUR X30, [SP, 0]
+    STUR X30, [SP, 0]
 
-    movz w10, 0xFF, lsl 16
-	movk w10, 0xFFFF, lsl 0
+    // Estrella 1 (x3=50)
+    mov x1, 3      // ancho
+    mov x2, 3      // alto
+    mov x3, 50     // x
+    mov x4, 200    // y
+    bl draw_rectangle
 
-	// Coordenadas de las estrellas (más y mejor distribuidas, evitando el área del texto "OdC 2025")
-	// Área a evitar: X=10..300, Y=10..80 aprox
+    // Estrella 4 (x3=80)
+    mov x3, 80
+    mov x4, 140
+    bl draw_rectangle
 
-	// Estrella 1
-	mov x1, 3      // ancho
-	mov x2, 3      // alto
-	mov x3, 40     // x
-	mov x4, 100    // y
-	bl draw_rectangle
+    // Estrella 7 (x3=180)
+    mov x3, 180
+    mov x4, 250
+    bl draw_rectangle
 
-	// Estrella 2
-	mov x3, 80
-	mov x4, 140
-	bl draw_rectangle
+    // Estrella 10 (x3=300)
+    mov x3, 300
+    mov x4, 110
+    bl draw_rectangle
 
-	// Estrella 3
-	mov x3, 120
-	mov x4, 200
-	bl draw_rectangle
+    // Estrella 13 (x3=350)
+    mov x3, 350
+    mov x4, 350
+    bl draw_rectangle
 
-	// Estrella 4
-	mov x3, 180
-	mov x4, 160
-	bl draw_rectangle
+    // Estrella 16 (x3=420)
+    mov x3, 420
+    mov x4, 320
+    bl draw_rectangle
 
-
-	// Estrella 5
-	mov x3, 260
-	mov x4, 120
-	bl draw_rectangle
-
-	// Estrella 6
-	mov x3, 320
-	mov x4, 50
-	bl draw_rectangle
-
-	// Estrella 7
-	mov x3, 370
-	mov x4, 90
-	bl draw_rectangle
-
-	// Estrella 8
-	mov x3, 410
-	mov x4, 30
-	bl draw_rectangle
-
-	// Estrella 9
-	mov x3, 470
-	mov x4, 80
-	bl draw_rectangle
-
-	// Estrella 10
-	mov x3, 150
-	mov x4, 320
-	bl draw_rectangle
-
-	// Estrella 11
-	mov x3, 300
-	mov x4, 110
-	bl draw_rectangle
-
-	// Estrella 12
-	mov x3, 350
-	mov x4, 20
-	bl draw_rectangle
-
-	// Estrella 13
-	mov x3, 400
-	mov x4, 200
-	bl draw_rectangle
-
-	// Estrella 14
-	mov x3, 350
-	mov x4, 350
-	bl draw_rectangle
-
-	// Estrella 15
-	mov x3, 550
-	mov x4, 350
-	bl draw_rectangle
-
-	// Estrella 16
-	mov x3, 370
-	mov x4, 250
-	bl draw_rectangle
-
-	// Estrella 17
-	mov x3, 480
-	mov x4, 180
-	bl draw_rectangle
-
-	// Estrella 18
-	mov x3, 600
-	mov x4, 200
-	bl draw_rectangle
-
-
-
-	// Estrella 19
-	mov x3, 420
-	mov x4, 320
-	bl draw_rectangle
-
-	// Estrella 20
-	mov x3, 540
-	mov x4, 250
-	bl draw_rectangle
-
-	// Estrella 21
-	mov x3, 80
-	mov x4, 300
-	bl draw_rectangle
-
-	// Estrella 22
-	mov x3, 180
-	mov x4, 250
-	bl draw_rectangle
-
-	// Estrella 23
-	mov x3, 250
-	mov x4, 320
-	bl draw_rectangle
-
-	// Estrella 24
-	mov x3, 50
-	mov x4, 200
-	bl draw_rectangle
+    // Estrella 19 (x3=540)
+    mov x3, 540
+    mov x4, 250
+    bl draw_rectangle
 
     LDR X30, [SP, 0]
-	ADD SP, SP, 8	
-ret
+    ADD SP, SP, 8	
+    ret
+
+estrellas2:
+    SUB SP, SP, 8 						
+    STUR X30, [SP, 0]
+
+    // Estrella 2 (x3=40)
+    mov x1, 3      // ancho
+    mov x2, 3      // alto
+    mov x3, 40
+    mov x4, 100
+    bl draw_rectangle
+
+    // Estrella 5 (x3=120)
+    mov x3, 120
+    mov x4, 200
+    bl draw_rectangle
+
+    // Estrella 8 (x3=250)
+    mov x3, 250
+    mov x4, 320
+    bl draw_rectangle
+
+    // Estrella 11 (x3=320)
+    mov x3, 320
+    mov x4, 50
+    bl draw_rectangle
+
+    // Estrella 14 (x3=370)
+    mov x3, 370
+    mov x4, 90
+    bl draw_rectangle
+
+    // Estrella 17 (x3=410)
+    mov x3, 410
+    mov x4, 30
+    bl draw_rectangle
+
+    // Estrella 20 (x3=550)
+    mov x3, 550
+    mov x4, 350
+    bl draw_rectangle
+
+    LDR X30, [SP, 0]
+    ADD SP, SP, 8	
+    ret
+
+estrellas3:
+    SUB SP, SP, 8 						
+    STUR X30, [SP, 0]
+
+    // Estrella 3 (x3=80)
+    mov x1, 3      // ancho
+    mov x2, 3      // alto
+    mov x3, 80
+    mov x4, 300
+    bl draw_rectangle
+
+    // Estrella 6 (x3=150)
+    mov x3, 150
+    mov x4, 320
+    bl draw_rectangle
+
+    // Estrella 9 (x3=260)
+    mov x3, 260
+    mov x4, 120
+    bl draw_rectangle
+
+    // Estrella 12 (x3=350)
+    mov x3, 350
+    mov x4, 20
+    bl draw_rectangle
+
+    // Estrella 15 (x3=370)
+    mov x3, 370
+    mov x4, 250
+    bl draw_rectangle
+
+    // Estrella 18 (x3=470)
+    mov x3, 470
+    mov x4, 80
+    bl draw_rectangle
+
+    // Estrella 21 (x3=600)
+    mov x3, 600
+    mov x4, 200
+    bl draw_rectangle
+
+    LDR X30, [SP, 0]
+    ADD SP, SP, 8	
+    ret
+
 
 //------------------- Fin Dibujos -------------------------
+animacion:
+    SUB SP, SP, 8 						
+    STUR X30, [SP, 0]
+
+    //estado 1
+    movz w10, 0x14, lsl 16
+	movk w10, 0x1414, lsl 0
+    BL estrellas1
+    BL estrellas2
+    BL estrellas3
+
+    MOVZ X8, 0x2800, LSL 16
+    BL delay_function
+
+    //estado 2
+    movz w10, 0x40, lsl 16
+	movk w10, 0x4040, lsl 0
+    BL estrellas1
+    BL estrellas2
+    BL estrellas3
+
+    MOVZ X8, 0x0800, LSL 16
+    BL delay_function
+
+    //estado 3
+    movz w10, 0x66, lsl 16
+	movk w10, 0x6666, lsl 0
+    BL estrellas1
+    BL estrellas2
+    BL estrellas3
+
+    MOVZ X8, 0x0800, LSL 16
+    BL delay_function
+
+    //estado 4
+    movz w10, 0xC2, lsl 16
+	movk w10, 0xC2C2, lsl 0
+    BL estrellas1
+    BL estrellas2
+    BL estrellas3
+
+    MOVZ X8, 0x0800, LSL 16
+    BL delay_function
+
+    //estado 5
+    movz w10, 0xFF, lsl 16
+	movk w10, 0xFFFF, lsl 0
+    BL estrellas1
+    BL estrellas2
+    BL estrellas3
+
+    MOVZ X8, 0x2800, LSL 16
+    BL delay_function
+    
+    //estado 6
+    movz w10, 0xC2, lsl 16
+	movk w10, 0xC2C2, lsl 0
+    BL estrellas1
+    BL estrellas2
+    BL estrellas3
+
+    MOVZ X8, 0x0800, LSL 16
+    BL delay_function
+
+    //estado 7
+    movz w10, 0x66, lsl 16
+	movk w10, 0x6666, lsl 0
+    BL estrellas1
+    BL estrellas2
+    BL estrellas3
+
+    MOVZ X8, 0x0800, LSL 16
+    BL delay_function
+
+    //estado 8
+    movz w10, 0x40, lsl 16
+	movk w10, 0x4040, lsl 0
+    BL estrellas1
+    BL estrellas2
+    BL estrellas3
+
+    MOVZ X8, 0x0800, LSL 16
+    BL delay_function
+
+    BL animacion
+
+    LDR X30, [SP, 0]
+    ADD SP, SP, 8	
+ret
+
+//------------------ Fin Animación -----------------------
