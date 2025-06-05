@@ -1,328 +1,120 @@
-	.equ SCREEN_WIDTH, 		640
-	.equ SCREEN_HEIGHT, 		480
-	.equ BITS_PER_PIXEL,  	32
+.include "functions.s" // Incluir el archivo de funciones
 
-	.equ GPIO_BASE,      0x3f200000
-	.equ GPIO_GPFSEL0,   0x00
-	.equ GPIO_GPLEV0,    0x34
+.equ SCREEN_WIDTH, 		640
+.equ SCREEN_HEIGHT, 	480
+.equ BITS_PER_PIXEL,  	32
 
-	.globl main
+.equ GPIO_BASE,      0x3f200000
+.equ GPIO_GPFSEL0,   0x00
+.equ GPIO_GPLEV0,    0x34
+
+// Tabla de offsets para flameo (signed int)
+.align 2
+FlagWaveOffsets:
+	.word 0, 5, 8, 10, 7, 3, 0, 4
+
+.globl main
 
 main:
 	// x0 contiene la direccion base del framebuffer
  	mov x20, x0	// Guarda la dirección base del framebuffer en x20
 	//---------------- CODE HERE ------------------------------------
+    bl background
 
-	// fondo
-	movz x10, 0x21, lsl 16 		// color de fondo #212121
-	movk x10, 0x2121, lsl 00 	// color de fondo
+	bl luna
 
-	// mastil
-	movz x11, 0x7D, lsl 16 		// #7D4016
-	movk x11, 0x4016, lsl 00
+    bl texto
 
-	// bandera y algunas estrellas
-	movz x12, 0xFF, lsl 16 		// #FFFFF 
-	movk x12, 0xFFFF, lsl 00
+	// d) Dibujar bandera Argentina en un mástil (más alta)
+	// Color del mástil (gris: ARGB=FFAAAAAA -> 0xFFAAAAAA)
+	movz w10, 0xAA, lsl 16
+	movk w10, 0xAAAA, lsl 0
+	mov x1, 12              // Ancho del mástil
+	mov x2, 300             // Alto del mástil (más alto)
+	mov x3, 160             // Posición X del mástil (más a la izquierda)
+	mov x4, SCREEN_HEIGHT-360 // Posición Y del mástil (ajustado para mástil más alto)
+	bl draw_rectangle
 
-	// azul bandera 
-	movz x13, 0x6C, lsl 16 	// #6CACE4
-	movk x13, 0xACE4, lsl 00 
+	// Secciona cada franja de la bandera en cuadrados de 40x40 píxeles
+	// Cada columna tiene una variación en Y para simular flameo
 
-	// estrellas lilas
-	movz x14, 0xD8, lsl 16 // #D8C9F4
-	movk x14, 0xC9F4, lsl 00 
+	// Franja celeste superior (ARGB=FF87CEEB)
+	movz w10, 0x87, lsl 16
+	movk w10, 0xCEEB, lsl 0
+	mov x1, 40              // Ancho del cuadrado
+	mov x2, 40              // Alto del cuadrado
+	mov x3, 172             // X inicial (inicio de la bandera)
+	FlagCelesteSupLoop:
+		cmp x3, 172+320         // ¿Llegó al final de la franja?
+		b.ge FlagCelesteSupDone
+		// Calcular variación Y: offset = 8 * sin((x3-172)/40 * 25°)
+		// Aproximamos con una tabla de offsets para 8 columnas
+		// offsets: 0, 4, 7, 8, 7, 4, 0, -4
+		sub x12, x3, 172        // x12 = columna*40
+		mov x17, 40
+		udiv x13, x12, x17      // x13 = columna (0..7)
+		adr x14, FlagWaveOffsets
+		ldrsw x15, [x14, x13, lsl 2] // offset en x15 (signed)
+		mov x16, SCREEN_HEIGHT
+		sub x16, x16, 360       // Y base
+		add x4, x16, x15        // Y inicial con offset
+		bl draw_rectangle
+		add x3, x3, 40
+		b FlagCelesteSupLoop
+	FlagCelesteSupDone:
 
-	// pasto(?) 
-	movz x15, 0x2B, lsl 16 // #2B5B44
-	movk x15, 0x5B44, lsl 00
-	
-	mov x0, x20                 // Recuperar dirección base
-    mov x2, SCREEN_HEIGHT       // Y Size
-    
-loop1:
-	mov x1, SCREEN_WIDTH         // X Size
-loop0:
-	// pintado de fondo
-	stur w10,[x0]  // Colorear el pixel N
-	add x0,x0,4	   // Siguiente pixel
-	sub x1,x1,1	   // Decrementar contador X
-	cbnz x1,loop0  // Si no terminó la fila, salto
-	sub x2,x2,1	   // Decrementar contador Y
-	cbnz x2,loop1  // Si no es la última fila, salto
-	
-	//-------------- Llamados de dibujos ---------------//
+	// Franja blanca central (ARGB=FFFFFFFF)
+	movz w10, 0xFF, lsl 16
+	movk w10, 0xFFFF, lsl 0
+	mov x1, 40
+	mov x2, 40
+	mov x3, 172
+	FlagBlancaLoop:
+		cmp x3, 172+320
+		b.ge FlagBlancaDone
+		sub x12, x3, 172
+		mov x17, 40
+		udiv x13, x12, x17
+		adr x14, FlagWaveOffsets
+		ldrsw x15, [x14, x13, lsl 2]
+		mov x16, SCREEN_HEIGHT
+		sub x16, x16, 320
+		add x4, x16, x15
+		bl draw_rectangle
+		add x3, x3, 40
+		b FlagBlancaLoop
+	FlagBlancaDone:
 
-	// x0 direccion de framebuffer
-	// x1 x_inicio 
-	// x2 y_inicio 
-	// x3 largo/longitud
-	// x4 ángulo de direccion
-		// Ángulo 0 = horizontal
-		// Ángulo 2 = diagonal positiva (45°)
-		// Ángulo 4 = vertical
-		// Ángulo 6 = diagonal negativa (135°)
-	// llamado
-	// comentado, usar para hacer pasto cruzado despues pasando el color  x15 (w15)
-	// horizontal (ángulo 0)
-	// mov x0, x20              
-	// mov x1, #200             
-	// mov x2, #100             
-	// mov x3, #50             
-	// mov x4, #0               
-	// bl linea                 
-// 
-	// // diagonal 45° (ángulo 2)
-	// mov x0, x20              
-	// mov x1, #250              
-	// mov x2, #150             
-	// mov x3, #40              
-	// mov x4, #2               
-	// bl linea                 
-// 
-	// // vertical (ángulo 4)
-	// mov x0, x20              
-	// mov x1, #300             
-	// mov x2, #200             
-	// mov x3, #60              
-	// mov x4, #4               
-	// bl linea                
-// 
-	// // diagonal 135° (ángulo 6)
-	// mov x0, x20              
-	// mov x1, #350             
-	// mov x2, #250             
-	// mov x3, #30              
-	// mov x4, #6               
-	bl linea                
+    // Franja celeste inferior (ARGB=FF87CEEB)
+    movz w10, 0x87, lsl 16
+    movk w10, 0xCEEB, lsl 0
+    mov x1, 40
+    mov x2, 40
+    mov x3, 172          // <-- REINICIAR x3 ANTES DEL BUCLE
+	FlagCelesteInfLoop:
+		cmp x3, 172+320
+		b.ge FlagCelesteInfDone
+		sub x12, x3, 172
+		mov x17, 40
+		udiv x13, x12, x17
+		adr x14, FlagWaveOffsets
+		ldrsw x15, [x14, x13, lsl 2]
+		mov x16, SCREEN_HEIGHT
+		sub x16, x16, 280
+		add x4, x16, x15
+		bl draw_rectangle
+		add x3, x3, 40
+		b FlagCelesteInfLoop
+	FlagCelesteInfDone:
 
-	// estrella 
-	// x_centro 
-	// y_centro 
-	// tamaño
-	// Color
-	// llamado
-	
-	mov x0, x20              
-	mov x1, #320             
-	mov x2, #240             
-	mov x3, #8              
-	mov x4, x14              
-	bl estrella              
+	// Sol central pequeño (amarillo oscuro: ARGB=FFCCCC00)
+	movz w10, 0xCC, lsl 16
+	movk w10, 0xCC00, lsl 0
+	mov x3, 18              // Radio más pequeño (no más grande que la franja)
+	mov x4, 332             // Centro X (centro de la bandera: 172 + 320/2)
+	mov x5, SCREEN_HEIGHT-290 // Centro Y (en la franja blanca)
+	bl draw_circle
 
-	mov x0, x20             
-	mov x1, #400             
-	mov x2, #150             
-	mov x3, #5              
-	mov x4, x12              
-	bl estrella
-
-
-	// Ejemplo de uso de gpios
-	mov x9, GPIO_BASE
-
-	// Atención: se utilizan registros w porque la documentación de broadcom
-	// indica que los registros que estamos leyendo y escribiendo son de 32 bits
-
-	// Setea gpios 0 - 9 como lectura
-	str wzr, [x9, GPIO_GPFSEL0]
-
-	// Lee el estado de los GPIO 0 - 31
-	ldr w10, [x9, GPIO_GPLEV0]
-
-	// And bit a bit mantiene el resultado del bit 2 en w10
-	and w11, w10, 0b10
-
-	// w11 será 1 si había un 1 en la posición 2 de w10, si no será 0
-	// efectivamente, su valor representará si GPIO 2 está activo
-	lsr w11, w11, 1
-
-	
-//-------------- Funciones ---------------------//
-
-
-//------Lineas
-
-linea:
-    stp x29, x30, [sp, #-16]!
-    stp x19, x20, [sp, #-16]!
-    stp x21, x22, [sp, #-16]!
-    
-    mov x19, x0        // direccion  
-    mov x20, x1        // x_inicio
-    mov x21, x2        // y_inicio
-    mov x22, x3        // longitud
-    
-    cmp x4, #0
-    b.eq linea_horizontal   
-    cmp x4, #4
-    b.eq linea_vertical    
-    cmp x4, #2
-    b.eq linea_diagonal_pos 
-    cmp x4, #6
-    b.eq linea_diagonal_neg
-    b linea_fin         // si no hay angulo valido, termina
-
-// @params
-// x9 = ancho * y_inicio
-// x9 = (ancho * y_inicio) + x_inicio
-// x9 *= 4 (bytes por píxel)
-// x9 = dirección base + offset
-
-linea_horizontal:
-    mov x9, SCREEN_WIDTH
-    mul x9, x9, x21     
-    add x9, x9, x20     
-    lsl x9, x9, 2       
-    add x9, x19, x9     
-    
-    mov x10, #0         
-    
-linea_h_loop:
-    stur w12, [x9]     
-    add x9, x9, #4      
-    add x10, x10, #1    
-    cmp x10, x22        
-    b.lt linea_h_loop   
-    b linea_fin
-
-linea_vertical:
-    mov x9, SCREEN_WIDTH
-    mul x9, x9, x21     
-    add x9, x9, x20     
-    lsl x9, x9, 2       
-    add x9, x19, x9     
-    
-    mov x10, #0         
-    mov x11, SCREEN_WIDTH       
-    lsl x11, x11, #2
-    b linea_v_loop      
-
-linea_diagonal_pos:
-    mov x9, SCREEN_WIDTH
-    mul x9, x9, x21     
-    add x9, x9, x20     
-    lsl x9, x9, 2       
-    add x9, x19, x9     
-    
-    mov x10, #0         
-    mov x11, SCREEN_WIDTH       
-    lsl x11, x11, #2            
-    add x11, x11, #4
-    b linea_d_pos_loop  
-
-linea_diagonal_neg:
-    mov x9, SCREEN_WIDTH
-    mul x9, x9, x21     
-    add x9, x9, x20     
-    lsl x9, x9, 2       
-    add x9, x19, x9     
-    
-    mov x10, #0         
-    mov x11, SCREEN_WIDTH       
-    lsl x11, x11, #2            
-    sub x11, x11, #4
-    b linea_d_neg_loop  
-
-linea_v_loop:
-    stur w12, [x9]     
-    add x9, x9, x11     
-    add x10, x10, #1    
-    cmp x10, x22        
-    b.lt linea_v_loop   
-    b linea_fin
-
-linea_d_pos_loop:
-    stur w12, [x9]     
-    add x9, x9, x11     
-    add x10, x10, #1    
-    cmp x10, x22        
-    b.lt linea_d_pos_loop 
-    b linea_fin
-
-linea_d_neg_loop:
-    stur w12, [x9]     
-    add x9, x9, x11     
-    add x10, x10, #1    
-    cmp x10, x22        
-    b.lt linea_d_neg_loop 
-    b linea_fin         
-
-linea_fin:
-    ldp x21, x22, [sp], #16
-    ldp x19, x20, [sp], #16
-    ldp x29, x30, [sp], #16
-    ret
-
-estrella:
-    stp x29, x30, [sp, #-16]!
-    stp x19, x20, [sp, #-16]!
-    stp x21, x22, [sp, #-16]!
-    stp x23, x24, [sp, #-16]!
-    
-    // párametros guardados a pasar
-    mov x19, x0         
-    mov x20, x1        
-    mov x21, x2        
-    mov x22, x3       
-    mov x23, x4        
-    
-    // colores
-    mov x24, x12       
-    mov x12, x23       
-    
-	// @params
-	// dirección
-	// y_incio 
-	// x_inicio
-	// longitud 
-	// angulo (vertial, horizontal, 45 o 135 grados)
-    // Línea vertical (punta hacia arriba y abajo)
-
-    mov x0, x19        
-    sub x2, x21, x22   
-    mov x1, x20        
-    mov x3, x22, lsl #1
-    mov x4, #4         
-    bl linea           
-    
-    // horizontal
-    mov x0, x19        
-    sub x1, x20, x22   
-    mov x2, x21        
-    mov x3, x22, lsl #1 
-    mov x4, #0        
-    bl linea           
-    
-    //45° 
-    mov x0, x19        
-    sub x1, x20, x22   
-    sub x2, x21, x22   
-    mov x3, x22, lsl #1
-    mov x4, #2         
-    bl linea           
-    
-    // 135° 
-    mov x0, x19        
-    add x1, x20, x22   
-    sub x2, x21, x22   
-    mov x3, x22, lsl #1 
-    mov x4, #6         
-    bl linea           
-    
-    mov x12, x24
-    
-    // restaura registros
-    ldp x23, x24, [sp], #16
-    ldp x21, x22, [sp], #16
-    ldp x19, x20, [sp], #16
-    ldp x29, x30, [sp], #16
-    ret
-
-circulo:
-
-
-//---------------------------------------------------------------
-	// Infinite Loop
 InfLoop:
 	b InfLoop
+
