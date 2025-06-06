@@ -330,11 +330,35 @@ luna:
     SUB SP, SP, 8 						
 	STUR X30, [SP, 0]
     
+    // Luz lunar 1
+	movz w10, 0x26, lsl 16
+	movk w10, 0x2626, lsl 0
+	mov x3, 96             // Radio de la luna (más grande)
+	mov x4, 570             // Centro X (más a la derecha)
+	mov x5, 70              // Centro Y (más arriba)
+    bl draw_circle
+
+    // Luz lunar 2
+	movz w10, 0x38, lsl 16
+	movk w10, 0x3838, lsl 0
+	mov x3, 82             // Radio de la luna (más grande)
+	mov x4, 570             // Centro X (más a la derecha)
+	mov x5, 70              // Centro Y (más arriba)
+    bl draw_circle
+
+    // Luz lunar 3
+	movz w10, 0x4A, lsl 16
+	movk w10, 0x4A4A, lsl 0
+	mov x3, 70              // Radio de la luna (más grande)
+	mov x4, 570             // Centro X (más a la derecha)
+	mov x5, 70              // Centro Y (más arriba)
+	bl draw_circle
+
     // Dibujar la luna (círculo)
 	// Color de la luna (gris claro: ARGB=FFE0E0E0)
 	movz w10, 0xE0, lsl 16
 	movk w10, 0xE0E0, lsl 0
-	mov x3, 65              // Radio de la luna (más grande)
+	mov x3, 55              // Radio de la luna (más grande)
 	mov x4, 570             // Centro X (más a la derecha)
 	mov x5, 70              // Centro Y (más arriba)
 	bl draw_circle
@@ -342,39 +366,39 @@ luna:
 	// Círculo interior 1 (gris medio: ARGB=FFCCCCCC)
 	movz w10, 0xCC, lsl 16
 	movk w10, 0xCCCC, lsl 0
-	mov x3, 28
-	mov x4, 600             // Más a la derecha
-	mov x5, 90              // Más arriba
+	mov x3, 20
+	mov x4, 550             // Más a la derecha
+	mov x5, 50             // Más arriba
 	bl draw_circle
 
 	// Círculo interior 2 (gris medio: ARGB=FFCCCCCC)
 	movz w10, 0xCC, lsl 16
 	movk w10, 0xCCCC, lsl 0
-	mov x3, 16
-	mov x4, 545             // Más a la izquierda
-	mov x5, 60              // Más arriba
+	mov x3, 14
+	mov x4, 535             // Más a la izquierda
+	mov x5, 85              // Más arriba
 	bl draw_circle
 
 	// Círculo interior 3 (gris medio: ARGB=FFCCCCCC)
 	movz w10, 0xCC, lsl 16
 	movk w10, 0xCCCC, lsl 0
 	mov x3, 12
-	mov x4, 585             // Más a la derecha
-	mov x5, 45
+	mov x4, 590            // Más a la derecha
+	mov x5, 40
 	bl draw_circle
 
 	// Detalle: cráter pequeño (gris claro: ARGB=FFCCCCCC)
 	movz w10, 0xCC, lsl 16
 	movk w10, 0xCCCC, lsl 0
-	mov x3, 7
+	mov x3, 10
 	mov x4, 555             // Más a la izquierda
-	mov x5, 95
+	mov x5, 100
 	bl draw_circle
 
 	// Detalle: cráter pequeño 2 (gris claro: ARGB=FFCCCCCC)
 	movz w10, 0xCC, lsl 16
 	movk w10, 0xCCCC, lsl 0
-	mov x3, 5
+	mov x3, 6
 	mov x4, 590             // Cerca del borde derecho
 	mov x5, 60
 	bl draw_circle
@@ -382,8 +406,8 @@ luna:
 	// Detalle: cráter pequeño 3 (gris claro: ARGB=FFCCCCCC)
 	movz w10, 0xCC, lsl 16
 	movk w10, 0xCCCC, lsl 0
-	mov x3, 4
-	mov x4, 575             // Más centrado
+	mov x3, 5
+	mov x4, 575            // Más centrado
 	mov x5, 80
 	bl draw_circle
 
@@ -633,7 +657,7 @@ segmento_bandera: // dibuja un rectángulo celeste y blanco.
 	ADD SP, SP, 40	
 ret
 
-segmento_bandera_central: // dibuja un rectángulo celeste y blanco.
+segmento_bandera_central: // dibuja un rectángulo celeste y blanco pero con el sol desviado 20 pixeles en x e y.
     SUB SP, SP, 40					
 	STUR X30, [SP, 0]
     STUR X4, [SP, 8]
@@ -655,6 +679,7 @@ segmento_bandera_central: // dibuja un rectángulo celeste y blanco.
     mul x6, x6, x1 // Calculo que tan alejado tiene que estar el pixel de la esquina de la bandera
     add x3, x3, x6 // Mover a la derecha según el número de segmento
 
+    // Cuando la bandera se mueve, deja partes celestes por todos lados, este bloque del color del cielo es para "repintar" esos espacios del color del cielo.
     movz w10, 0x14, lsl 16  // Cielo
     movk w10, 0x1414, lsl 0
     add x2, x2, 10          // Expando el ancho 5 pixeles temporalmente
@@ -810,7 +835,7 @@ estrellas3:
 
     // Estrella 9 (x3=260)
     mov x3, 260
-    mov x4, 120
+    mov x4, 110
     bl draw_rectangle
 
     // Estrella 12 (x3=350)
