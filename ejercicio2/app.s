@@ -8,9 +8,6 @@
 .equ GPIO_GPFSEL0,   0x00
 .equ GPIO_GPLEV0,    0x34
 
-// Tabla de offsets para flameo (signed int)
-
-
 .globl main
 
 main:
@@ -23,7 +20,7 @@ main:
 
     bl texto
 
-    bl bandera
+	bl mastil
 
 	bl animacion
 	

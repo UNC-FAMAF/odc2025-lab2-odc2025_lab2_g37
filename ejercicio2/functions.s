@@ -162,7 +162,6 @@ FlagWaveOffsets:
         ADD SP, SP, 56
     ret
 
-
     draw_rectangle:
         // Parametros
         // w10 -> Color
@@ -557,8 +556,7 @@ texto:
     LDR X30, [SP, 0]
 	ADD SP, SP, 8	
 ret
- 
-bandera:
+mastil:
     SUB SP, SP, 8 						
 	STUR X30, [SP, 0]
 
@@ -567,106 +565,150 @@ bandera:
 	movk w10, 0xAAAA, lsl 0
 	mov x1, 12              // Ancho del mástil
 	mov x2, 300             // Alto del mástil (más alto)
-	mov x3, 160             // Posición X del mástil (más a la izquierda)
+	mov x3, 78            // Posición X del mástil (más a la izquierda)
 	mov x4, SCREEN_HEIGHT-360 // Posición Y del mástil (ajustado para mástil más alto)
 	bl draw_rectangle
 
-	// Cada columna tiene una variación en Y para simular flameo
-
-	// Franja celeste superior (ARGB=FF87CEEB)
-	movz w10, 0x87, lsl 16
-	movk w10, 0xCEEB, lsl 0
-	mov x1, 40              // Ancho del cuadrado
-	mov x2, 40              // Alto del cuadrado
-	mov x3, 172             // X inicial (inicio de la bandera)
-	FlagCelesteSupLoop:
-		cmp x3, 172+320         // ¿Llegó al final de la franja?
-		b.ge FlagCelesteSupDone
-		// Calcular variación Y: offset = 8 * sin((x3-172)/40 * 25°)
-		// Aproximamos con una tabla de offsets para 8 columnas
-		// offsets: 0, 4, 7, 8, 7, 4, 0, -4
-		sub x12, x3, 172        // x12 = columna*40
-		mov x17, 40
-		udiv x13, x12, x17      // x13 = columna (0..7)
-		adr x14, FlagWaveOffsets
-		ldrsw x15, [x14, x13, lsl 2] // offset en x15 (signed)
-		mov x16, SCREEN_HEIGHT
-		sub x16, x16, 360       // Y base
-		add x4, x16, x15        // Y inicial con offset
-		bl draw_rectangle
-		add x3, x3, 40
-		b FlagCelesteSupLoop
-	FlagCelesteSupDone:
-
-	// Franja blanca central (ARGB=FFFFFFFF)
-	movz w10, 0xFF, lsl 16
-	movk w10, 0xFFFF, lsl 0
-	mov x1, 40
-	mov x2, 40
-	mov x3, 172
-	FlagBlancaLoop:
-		cmp x3, 172+320
-		b.ge FlagBlancaDone
-		sub x12, x3, 172
-		mov x17, 40
-		udiv x13, x12, x17
-		adr x14, FlagWaveOffsets
-		ldrsw x15, [x14, x13, lsl 2]
-		mov x16, SCREEN_HEIGHT
-		sub x16, x16, 320
-		add x4, x16, x15
-		bl draw_rectangle
-		add x3, x3, 40
-		b FlagBlancaLoop
-	FlagBlancaDone:
-
-    // Franja celeste inferior (ARGB=FF87CEEB)
-    movz w10, 0x87, lsl 16
-    movk w10, 0xCEEB, lsl 0
-    mov x1, 40
-    mov x2, 40
-    mov x3, 172          // <-- REINICIAR x3 ANTES DEL BUCLE
-	FlagCelesteInfLoop:
-		cmp x3, 172+320
-		b.ge FlagCelesteInfDone
-		sub x12, x3, 172
-		mov x17, 40
-		udiv x13, x12, x17
-		adr x14, FlagWaveOffsets
-		ldrsw x15, [x14, x13, lsl 2]
-		mov x16, SCREEN_HEIGHT
-		sub x16, x16, 280
-		add x4, x16, x15
-		bl draw_rectangle
-		add x3, x3, 40
-		b FlagCelesteInfLoop
-	FlagCelesteInfDone:
-
-	// Sol central pequeño (amarillo oscuro: ARGB=FFCCCC00)
-	movz w10, 0xCC, lsl 16
-	movk w10, 0xCC00, lsl 0
-	mov x3, 18              // Radio más pequeño (no más grande que la franja)
-	mov x4, 332             // Centro X (centro de la bandera: 172 + 320/2)
-	mov x5, SCREEN_HEIGHT-290 // Centro Y (en la franja blanca)
-	bl draw_circle
+    
+    // Segmento fijo de la bandera
+    mov x1, #40
+    mov x2, #120
+    mov x3, #90
+    mov x4, #120
+    mov x5, #0
+    mov x6, #0
+    bl segmento_bandera
+    
 
     LDR X30, [SP, 0]
-	ADD SP, SP, 8	
+	ADD SP, SP, 8
 ret
 
-estrellas1:
-    SUB SP, SP, 8 						
-    STUR X30, [SP, 0]
+segmento_bandera: // dibuja un rectángulo celeste y blanco.
+    SUB SP, SP, 40					
+	STUR X30, [SP, 0]
+    STUR X4, [SP, 8]
+    STUR X6, [SP, 16]
+    STUR X3, [SP, 24]
+    STUR x2,[SP, 32]
 
-    // Estrella 1 (x3=50)
-    mov x1, 3      // ancho
-    mov x2, 3      // alto
-    mov x3, 50     // x
-    mov x4, 200    // y
+    // Parametros
+        // w10 -> Color
+        // x1 -> Ancho
+        // x2 -> Altura
+        // x3 -> Pixel X (inicial)
+        // x4 -> Pixel Y (inicial) (ignorando offset)
+        // x5 -> Offset
+        // x6 -> Número de segmento
+    mov x1, 40
+    mov x2, #120
+
+    mul x6, x6, x1 // 
+    add x3, x3, x6 // Mover a la derecha según el número de segmento
+    movz w10, 0x14, lsl 16  // Cielo
+    movk w10, 0x1414, lsl 0
+    add x2, x2, 12
+    sub x4, x4, 5
+    bl draw_rectangle 
+    sub x2, x2, 12
+    add x4, x4, 5
+
+    add x4, x4, x5 // Mover abajo o arriba según el offset
+    
+
+    movz w10, 0x87, lsl 16  // Celeste
+	movk w10, 0xCEEB, lsl 0
+    bl draw_rectangle
+    movz w10, 0xFF, lsl 16  // Blanco
+    movk w10, 0xFFFF, lsl 0
+    mov x2, #40
+    add x4, x4, 40 // Mover hacia abajo para la siguiente franja
     bl draw_rectangle
 
-    // Estrella 4 (x3=80)
-    mov x3, 80
+    LDR x2,[SP, 32]
+    LDR x3,[SP, 24]
+    LDR x6,[SP, 16]
+    LDR x4,[SP, 8]
+    LDR X30, [SP, 0]
+	ADD SP, SP, 40	
+ret
+
+segmento_bandera_central: // dibuja un rectángulo celeste y blanco.
+    SUB SP, SP, 40					
+	STUR X30, [SP, 0]
+    STUR X4, [SP, 8]
+    STUR X6, [SP, 16]
+    STUR X3, [SP, 24]
+    STUR x2,[SP, 32]
+
+    // Parametros
+        // w10 -> Color
+        // x1 -> Ancho
+        // x2 -> Altura
+        // x3 -> Pixel X (inicial)
+        // x4 -> Pixel Y (inicial) (ignorando offset)
+        // x5 -> Offset
+        // x6 -> Número de segmento
+    mov x1, 40
+    mov x2, #120
+
+    mul x6, x6, x1 // Calculo que tan alejado tiene que estar el pixel de la esquina de la bandera
+    add x3, x3, x6 // Mover a la derecha según el número de segmento
+
+    movz w10, 0x14, lsl 16  // Cielo
+    movk w10, 0x1414, lsl 0
+    add x2, x2, 10          // Expando el ancho 5 pixeles temporalmente
+    sub x4, x4, 5           // Muevo el pixel 5 pixeles hacia arriba temporalmente
+    bl draw_rectangle 
+    sub x2, x2, 10          // Contraigo el ancho 5 pixeles
+    add x4, x4, 5           // Devuelvo el pixel 5 pixeles hacia abajo
+
+    add x4, x4, x5          // y + offset
+    movz w10, 0x87, lsl 16  // Celeste
+	movk w10, 0xCEEB, lsl 0
+    bl draw_rectangle
+
+    movz w10, 0xFF, lsl 16  // Blanco
+    movk w10, 0xFFFF, lsl 0
+    mov x2, #40             // Cambio la altura a 40 pixeles
+    add x4, x4, 40          // Mover hacia abajo para la siguiente franja
+    bl draw_rectangle
+
+    movz w10, 0xCC, lsl 16  // Amarillo
+    movk w10, 0xCC00, lsl 0
+    mov x13, x3              // x13 = x3 -> Posición X del centro del círculo
+    mov x3, 18              // x3 -> Radio del círculo
+    mov x5, x4
+    add x5, x5, 20
+    mov x4, x13
+    add x4, x4, 20
+                            // (x4, x5),(x,y) -> Centro del círculo
+    bl draw_circle
+
+    LDR x2,[SP, 32]
+    LDR x3,[SP, 24]
+    LDR x6,[SP, 16]
+    LDR x4,[SP, 8]
+    LDR X30, [SP, 0]
+	ADD SP, SP, 40	
+ret
+
+
+estrellas1:
+    SUB SP, SP, 24
+    STUR X30, [SP, 0]
+    STUR X4, [SP, 8]
+    STUR X3, [SP, 16]
+
+    // Estrella 1 (x3=50)
+    mov x1, 3       // ancho
+    mov x2, 3       // alto
+    mov x3, 50      // x
+    mov x4, 200     // y
+    bl draw_rectangle
+
+    // Estrella 4 (x3=60)
+    mov x3, 60
     mov x4, 140
     bl draw_rectangle
 
@@ -695,24 +737,27 @@ estrellas1:
     mov x4, 250
     bl draw_rectangle
 
+    LDR X3, [SP, 16]
+    LDR X4, [SP, 8]
     LDR X30, [SP, 0]
-    ADD SP, SP, 8	
-    ret
+    ADD SP, SP, 24
 
 estrellas2:
-    SUB SP, SP, 8 						
+    SUB SP, SP, 24
     STUR X30, [SP, 0]
+    STUR X4, [SP, 8]
+    STUR X3, [SP, 16]
 
     // Estrella 2 (x3=40)
-    mov x1, 3      // ancho
-    mov x2, 3      // alto
+    mov x1, 3       // ancho
+    mov x2, 3       // alto
     mov x3, 40
     mov x4, 100
     bl draw_rectangle
 
-    // Estrella 5 (x3=120)
-    mov x3, 120
-    mov x4, 200
+    // Estrella 5 (x3=60)
+    mov x3, 60
+    mov x4, 220
     bl draw_rectangle
 
     // Estrella 8 (x3=250)
@@ -740,18 +785,21 @@ estrellas2:
     mov x4, 350
     bl draw_rectangle
 
+    LDR X3, [SP, 16]
+    LDR X4, [SP, 8]
     LDR X30, [SP, 0]
-    ADD SP, SP, 8	
-    ret
+    ADD SP, SP, 24
 
 estrellas3:
-    SUB SP, SP, 8 						
+    SUB SP, SP, 24
     STUR X30, [SP, 0]
+    STUR X4, [SP, 8]
+    STUR X3, [SP, 16]
 
-    // Estrella 3 (x3=80)
-    mov x1, 3      // ancho
-    mov x2, 3      // alto
-    mov x3, 80
+    // Estrella 3 (x3=60)
+    mov x1, 3       // ancho
+    mov x2, 3       // alto
+    mov x3, 60
     mov x4, 300
     bl draw_rectangle
 
@@ -777,7 +825,7 @@ estrellas3:
 
     // Estrella 18 (x3=470)
     mov x3, 470
-    mov x4, 80
+    mov x4, 60
     bl draw_rectangle
 
     // Estrella 21 (x3=600)
@@ -785,96 +833,522 @@ estrellas3:
     mov x4, 200
     bl draw_rectangle
 
+    LDR X3, [SP, 16]
+    LDR X4, [SP, 8]
     LDR X30, [SP, 0]
-    ADD SP, SP, 8	
+    ADD SP, SP, 24
     ret
+
+bandera_frame_1:
+    SUB SP, SP, 8 						
+    STUR X30, [SP, 0]
+        // Segmento 1
+        mov x6, #1 // número de segmento
+        mov x5, #0
+        sub x5, x5, #3 // offset -3
+        BL segmento_bandera
+
+        // Segmento 2
+        mov x6, #2
+        mov x5, #0
+        sub x5, x5, #4 // offset -4
+        BL segmento_bandera
+
+        // Segmento 3
+        mov x6, #3
+        mov x5, #0
+        sub x5, x5, #3 // offset -3
+        BL segmento_bandera_central
+
+        // Segmento 4
+        mov x6, #4
+        mov x5, #0
+        // offset 0 (no suma ni resta)
+        BL segmento_bandera
+
+        // Segmento 5
+        mov x6, #5
+        mov x5, #0
+        add x5, x5, #3 // offset 3
+        BL segmento_bandera
+
+        // Segmento 6
+        mov x6, #6
+        mov x5, #0
+        add x5, x5, #4 // offset 4
+        BL segmento_bandera
+    LDR X30, [SP, 0]
+    ADD SP, SP, 8
+ret
+
+bandera_frame_2:
+    SUB SP, SP, 8 						
+    STUR X30, [SP, 0]
+        // Segmento 1
+        mov x6, #1 // número de segmento
+        mov x5, #0
+        sub x5, x5, #2 // offset -2
+        BL segmento_bandera
+
+        // Segmento 2
+        mov x6, #2
+        mov x5, #0
+        sub x5, x5, #3 // offset -3
+        BL segmento_bandera
+
+        // Segmento 3
+        mov x6, #3
+        mov x5, #0
+        sub x5, x5, #2 // offset -2
+        BL segmento_bandera_central
+
+        // Segmento 4
+        mov x6, #4
+        mov x5, #0
+        // offset 0
+        BL segmento_bandera
+
+        // Segmento 5
+        mov x6, #5
+        mov x5, #0
+        add x5, x5, #2 // offset 2
+        BL segmento_bandera
+
+        // Segmento 6
+        mov x6, #6
+        mov x5, #0
+        add x5, x5, #3 // offset 3
+        BL segmento_bandera
+    LDR X30, [SP, 0]
+    ADD SP, SP, 8
+ret
+
+bandera_frame_3:
+    SUB SP, SP, 8 						
+    STUR X30, [SP, 0]
+        // Segmento 1
+        mov x6, #1 // número de segmento
+        mov x5, #0
+        sub x5, x5, #1 // offset -1
+        BL segmento_bandera
+
+        // Segmento 2
+        mov x6, #2
+        mov x5, #0
+        sub x5, x5, #2 // offset -2
+        BL segmento_bandera
+
+        // Segmento 3
+        mov x6, #3
+        mov x5, #0
+        sub x5, x5, #1 // offset -1
+        BL segmento_bandera_central
+
+        // Segmento 4
+        mov x6, #4
+        mov x5, #0
+        // offset 0
+        BL segmento_bandera
+
+        // Segmento 5
+        mov x6, #5
+        mov x5, #0
+        add x5, x5, #1 // offset 1
+        BL segmento_bandera
+
+        // Segmento 6
+        mov x6, #6
+        mov x5, #0
+        add x5, x5, #2 // offset 2
+        BL segmento_bandera
+    LDR X30, [SP, 0]
+    ADD SP, SP, 8
+ret
+
+bandera_frame_4:
+    SUB SP, SP, 8 						
+    STUR X30, [SP, 0]
+        // Segmento 1
+        mov x6, #1 // número de segmento
+        mov x5, #0 // offset 0
+        BL segmento_bandera
+
+        // Segmento 2
+        mov x6, #2
+        mov x5, #0
+        sub x5, x5, #1 // offset -1
+         BL segmento_bandera
+
+        // Segmento 4
+        mov x6, #3
+        mov x5, #0 // offset 0
+        BL segmento_bandera_central
+
+        // Segmento 6
+        mov x6, #4
+        mov x5, #0 // offset 0
+        BL segmento_bandera
+
+        // Segmento 7
+        mov x6, #5
+        mov x5, #0 // offset 0
+        BL segmento_bandera
+
+        // Segmento 8
+        mov x6, #6
+        mov x5, #0
+        add x5, x5, #1 // offset 1
+        BL segmento_bandera
+    LDR X30, [SP, 0]
+    ADD SP, SP, 8
+ret
+
+bandera_frame_5:
+    SUB SP, SP, 8 						
+    STUR X30, [SP, 0]
+        // Segmento 1
+        mov x6, #1 // número de segmento
+        mov x5, #0 // offset 0
+        BL segmento_bandera
+
+        // Segmento 2
+        mov x6, #2
+        mov x5, #0
+        add x5, x5, #1 // offset 1
+        BL segmento_bandera
+
+        // Segmento 3
+        mov x6, #3
+        mov x5, #0 // offset 0
+        BL segmento_bandera_central
+
+        // Segmento 4
+        mov x6, #4
+        mov x5, #0 // offset 0
+        BL segmento_bandera
+
+        // Segmento 5
+        mov x6, #5
+        mov x5, #0 // offset 0
+        BL segmento_bandera
+
+        // Segmento 6
+        mov x6, #6
+        mov x5, #0
+        sub x5, x5, #1 // offset -1
+        BL segmento_bandera
+    LDR X30, [SP, 0]
+    ADD SP, SP, 8
+ret
+
+bandera_frame_6:
+    SUB SP, SP, 8 						
+    STUR X30, [SP, 0]
+
+        // Segmento 1
+        mov x6, #1 // número de segmento
+        mov x5, #0
+        add x5, x5, #1 // offset 1
+        BL segmento_bandera
+        // Segmento 2
+        mov x6, #2
+        mov x5, #0
+        add x5, x5, #2 // offset 2
+        BL segmento_bandera
+
+        // Segmento 3
+        mov x6, #3
+        mov x5, #0
+        add x5, x5, #1 // offset 1
+        BL segmento_bandera_central
+
+        // Segmento 4
+        mov x6, #4
+        mov x5, #0
+        // offset 0
+        BL segmento_bandera
+
+        // Segmento 5
+        mov x6, #5
+        mov x5, #0
+        sub x5, x5, #1 // offset -1
+        BL segmento_bandera
+
+        // Segmento 6
+        mov x6, #6
+        mov x5, #0
+        sub x5, x5, #2 // offset -2
+        BL segmento_bandera
+    LDR X30, [SP, 0]
+    ADD SP, SP, 8
+ret
+
+bandera_frame_7:
+    SUB SP, SP, 8 						
+    STUR X30, [SP, 0]
+        // Segmento 1
+        mov x6, #1 // número de segmento
+        mov x5, #0
+        add x5, x5, #2 // offset 2
+        BL segmento_bandera
+
+        // Segmento 2
+        mov x6, #2
+        mov x5, #0
+        add x5, x5, #3 // offset 3
+        BL segmento_bandera
+
+        // Segmento 3
+        mov x6, #3
+        mov x5, #0
+        add x5, x5, #2 // offset 2
+        BL segmento_bandera_central
+
+        // Segmento 4
+        mov x6, #4
+        mov x5, #0
+        // offset 0
+        BL segmento_bandera
+
+        // Segmento 5
+        mov x6, #5
+        mov x5, #0
+        sub x5, x5, #2 // offset -2
+        BL segmento_bandera
+
+        // Segmento 6
+        mov x6, #6
+        mov x5, #0
+        sub x5, x5, #3 // offset -3
+        BL segmento_bandera
+    LDR X30, [SP, 0]
+    ADD SP, SP, 8
+ret
+
+bandera_frame_8:
+    SUB SP, SP, 8 						
+    STUR X30, [SP, 0]
+        // Segmento 1
+        mov x6, #1 // número de segmento
+        mov x5, #0
+        add x5, x5, #3 // offset 3
+        BL segmento_bandera
+
+        // Segmento 2
+        mov x6, #2
+        mov x5, #0
+        add x5, x5, #4 // offset 4
+        BL segmento_bandera
+
+        // Segmento 3
+        mov x6, #3
+        mov x5, #0
+        add x5, x5, #3 // offset 3
+        BL segmento_bandera_central
+
+        // Segmento 4
+        mov x6, #4
+        mov x5, #0
+        // offset 0
+        BL segmento_bandera
+
+        // Segmento 5
+        mov x6, #5
+        mov x5, #0
+        sub x5, x5, #3 // offset -3
+        BL segmento_bandera
+
+        // Segmento 6
+        mov x6, #6
+        mov x5, #0
+        sub x5, x5, #4 // offset -4
+        BL segmento_bandera
+    LDR X30, [SP, 0]
+    ADD SP, SP, 8
+ret
 
 
 //------------------- Fin Dibujos -------------------------
 animacion:
     SUB SP, SP, 8 						
     STUR X30, [SP, 0]
+    mov x4, #120 // Posición Y inicial de la bandera
+    mov x3, #90 // Posición X inicial de la bandera
 
-    //estado 1
-    movz w10, 0x14, lsl 16
-	movk w10, 0x1414, lsl 0
-    BL estrellas1
-    BL estrellas2
-    BL estrellas3
+    frame_1:
+        movz w10, 0x14, lsl 16
+        movk w10, 0x1414, lsl 0
+        BL estrellas1
+        movz w10, 0x28, lsl 16
+        movk w10, 0x2828, lsl 0
+        BL estrellas2
+        movz w10, 0x3C, lsl 16
+        movk w10, 0x3C3C, lsl 0
+        BL estrellas3
+        BL bandera_frame_1
 
-    MOVZ X8, 0x2800, LSL 16
-    BL delay_function
+        MOVZ X8, 0x0600, LSL 16
+        BL delay_function
+    frame_2:
+        movz w10, 0x28, lsl 16
+        movk w10, 0x2828, lsl 0
+        BL estrellas1
+        movz w10, 0x3C, lsl 16
+        movk w10, 0x3C3C, lsl 0
+        BL estrellas2
+        movz w10, 0x50, lsl 16
+        movk w10, 0x5050, lsl 0
+        BL estrellas3
+        Bl bandera_frame_2
 
-    //estado 2
-    movz w10, 0x40, lsl 16
-	movk w10, 0x4040, lsl 0
-    BL estrellas1
-    BL estrellas2
-    BL estrellas3
+        MOVZ X8, 0x0600, LSL 16
+        BL delay_function
+    frame_3:
+        movz w10, 0x3C, lsl 16
+        movk w10, 0x3C3C, lsl 0
+        BL estrellas1
+        movz w10, 0x50, lsl 16
+        movk w10, 0x5050, lsl 0
+        BL estrellas2
+        movz w10, 0x64, lsl 16
+        movk w10, 0x6464, lsl 0
+        BL estrellas3
+        BL bandera_frame_3
 
-    MOVZ X8, 0x0800, LSL 16
-    BL delay_function
+        MOVZ X8, 0x0600, LSL 16
+        BL delay_function
+    frame_4:
+        movz w10, 0x50, lsl 16
+        movk w10, 0x5050, lsl 0
+        BL estrellas1
+        movz w10, 0x64, lsl 16
+        movk w10, 0x6464, lsl 0
+        BL estrellas2
+        movz w10, 0x78, lsl 16
+        movk w10, 0x7878, lsl 0
+        BL estrellas3
+        BL bandera_frame_4
+        
+        MOVZ X8, 0x0600, LSL 16
+        BL delay_function
+    frame_5:
+        movz w10, 0x64, lsl 16
+        movk w10, 0x6464, lsl 0
+        BL estrellas1
+        movz w10, 0x78, lsl 16
+        movk w10, 0x7878, lsl 0
+        BL estrellas2
+        movz w10, 0x64, lsl 16
+        movk w10, 0x6464, lsl 0
+        BL estrellas3
+        BL bandera_frame_5
 
-    //estado 3
-    movz w10, 0x66, lsl 16
-	movk w10, 0x6666, lsl 0
-    BL estrellas1
-    BL estrellas2
-    BL estrellas3
+        MOVZ X8, 0x0600, LSL 16
+        BL delay_function
+    frame_6:
+        movz w10, 0x78, lsl 16
+        movk w10, 0x7878, lsl 0
+        BL estrellas1
+        movz w10, 0x64, lsl 16
+        movk w10, 0x6464, lsl 0
+        BL estrellas2
+        movz w10, 0x50, lsl 16
+        movk w10, 0x5050, lsl 0
+        BL estrellas3
+        BL bandera_frame_6
 
-    MOVZ X8, 0x0800, LSL 16
-    BL delay_function
+        MOVZ X8, 0x0600, LSL 16
+        BL delay_function
+    frame_7:
+        movz w10, 0x64, lsl 16
+        movk w10, 0x6464, lsl 0
+        BL estrellas1
+        movz w10, 0x50, lsl 16
+        movk w10, 0x5050, lsl 0
+        BL estrellas2
+        movz w10, 0x3C, lsl 16
+        movk w10, 0x3C3C, lsl 0
+        BL estrellas3
+        BL bandera_frame_7
 
-    //estado 4
-    movz w10, 0xC2, lsl 16
-	movk w10, 0xC2C2, lsl 0
-    BL estrellas1
-    BL estrellas2
-    BL estrellas3
+        MOVZ X8, 0x0600, LSL 16
+        BL delay_function
+    frame_8:
+        movz w10, 0x50, lsl 16
+        movk w10, 0x5050, lsl 0
+        BL estrellas1
+        movz w10, 0x3C, lsl 16
+        movk w10, 0x3C3C, lsl 0
+        BL estrellas2
+        movz w10, 0x28, lsl 16
+        movk w10, 0x2828, lsl 0
+        BL estrellas3
 
-    MOVZ X8, 0x0800, LSL 16
-    BL delay_function
+        MOVZ X8, 0x0600, LSL 16
+        BL delay_function
+    frame_9:
+        movz w10, 0x3C, lsl 16
+        movk w10, 0x3C3C, lsl 0
+        BL estrellas1
+        movz w10, 0x28, lsl 16
+        movk w10, 0x2828, lsl 0
+        BL estrellas2
+        movz w10, 0x14, lsl 16
+        movk w10, 0x1414, lsl 0
+        BL estrellas3
 
-    //estado 5
-    movz w10, 0xFF, lsl 16
-	movk w10, 0xFFFF, lsl 0
-    BL estrellas1
-    BL estrellas2
-    BL estrellas3
+        BL bandera_frame_7
 
-    MOVZ X8, 0x2800, LSL 16
-    BL delay_function
-    
-    //estado 6
-    movz w10, 0xC2, lsl 16
-	movk w10, 0xC2C2, lsl 0
-    BL estrellas1
-    BL estrellas2
-    BL estrellas3
+        MOVZ X8, 0x0600, LSL 16
+        BL delay_function
+    frame_10:
+        movz w10, 0x28, lsl 16
+        movk w10, 0x2828, lsl 0
+        BL estrellas1
+        movz w10, 0x14, lsl 16
+        movk w10, 0x1414, lsl 0
+        BL estrellas2
+        movz w10, 0x14, lsl 16
+        movk w10, 0x1414, lsl 0
+        BL estrellas3
+        BL bandera_frame_6
+        MOVZ X8, 0x0600, LSL 16
+        BL delay_function
+    frame_11:
+        movz w10, 0x1414, lsl 16
+        movk w10, 0x1414, lsl 0
+        BL estrellas1
+        BL bandera_frame_5
+        MOVZ X8, 0x0600, LSL 16
+        BL delay_function
+    frame_12:
+        BL bandera_frame_4
+        MOVZ X8, 0x0600, LSL 16
+        BL delay_function    
+    frame_13:
+        BL bandera_frame_3
+        MOVZ X8, 0x0600, LSL 16
+        BL delay_function
+    frame_14:
+        BL bandera_frame_2
+        movz w10, 0xC2, lsl 16
+        movk w10, 0xC2C2, lsl 0
 
-    MOVZ X8, 0x0800, LSL 16
-    BL delay_function
+        MOVZ X8, 0x0600, LSL 16
+        BL delay_function
+    frame_15:
+        BL bandera_frame_1
+        movz w10, 0x66, lsl 16
+        movk w10, 0x6666, lsl 0      
 
-    //estado 7
-    movz w10, 0x66, lsl 16
-	movk w10, 0x6666, lsl 0
-    BL estrellas1
-    BL estrellas2
-    BL estrellas3
+        MOVZ X8, 0x0600, LSL 16
+        BL delay_function
+    frame_16:
+        movz w10, 0x40, lsl 16
+        movk w10, 0x4040, lsl 0     
 
-    MOVZ X8, 0x0800, LSL 16
-    BL delay_function
-
-    //estado 8
-    movz w10, 0x40, lsl 16
-	movk w10, 0x4040, lsl 0
-    BL estrellas1
-    BL estrellas2
-    BL estrellas3
-
-    MOVZ X8, 0x0800, LSL 16
-    BL delay_function
-
+        MOVZ X8, 0x0600, LSL 16
+        BL delay_function
     BL animacion
 
     LDR X30, [SP, 0]
