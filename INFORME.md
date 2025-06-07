@@ -12,7 +12,7 @@ Argentina sobre pasto verde en plena noche estrellada con luna llena.
 
 Descripción ejercicio 2:
 
-Tomamos la decisión de animar la bandera y las estrellas para que estasAdd commentMore actions
-flameen y titilen. Movimos la bandera y respriteamos la luna.
+Tomamos la decisión de animar la bandera y las estrellas para que estas titilen y la bandera
+flamee. Movimos la bandera y respriteamos la luna.
 
 
